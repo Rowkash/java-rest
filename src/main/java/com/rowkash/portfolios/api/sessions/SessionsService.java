@@ -1,0 +1,42 @@
+package com.rowkash.portfolios.api.sessions;
+
+import org.springframework.session.FindByIndexNameSessionRepository;
+import org.springframework.session.data.redis.RedisIndexedSessionRepository;
+import org.springframework.stereotype.Service;
+import com.rowkash.portfolios.api.users.User;
+
+@Service
+public class SessionsService {
+  private final RedisIndexedSessionRepository sessionRepository;
+
+  public SessionsService(RedisIndexedSessionRepository sessionRepository) {
+    this.sessionRepository = sessionRepository;
+  }
+
+  public String createSession(User user) {
+    RedisIndexedSessionRepository.RedisSession session = sessionRepository.createSession();
+    SessionUserData userData = new SessionUserData(user);
+    session.setAttribute("userData", userData);
+    session.setAttribute(
+        FindByIndexNameSessionRepository.PRINCIPAL_NAME_INDEX_NAME, user.getEmail());
+    sessionRepository.save(session);
+
+    return session.getId();
+  }
+
+  public void updateSession(RedisIndexedSessionRepository.RedisSession session) {
+    session.changeSessionId();
+    sessionRepository.save(session);
+  }
+
+  public RedisIndexedSessionRepository.RedisSession getSessionById(String id) {
+    return sessionRepository.findById(id);
+  }
+
+  public void deleteSession(String id) {
+    RedisIndexedSessionRepository.RedisSession session = sessionRepository.findById(id);
+    if (session != null) {
+      sessionRepository.deleteById(session.getId());
+    }
+  }
+}
